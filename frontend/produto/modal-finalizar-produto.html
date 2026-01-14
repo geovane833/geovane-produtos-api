@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal - Finalizar Cadastro de Produto</title>
+</head>
+<body>
+    <div class="modal-header">
+        <span class="modal-icon">📦</span>
+        <h2>Finalizar Cadastro do Produto</h2>
+        <p>Confirme as informações e complete os dados adicionais</p>
+    </div>
+    <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+        <!-- Preview do produto -->
+        <div id="produtoPreviewContainer" style="display: grid; grid-template-columns: auto 1fr; gap: 15px; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div id="produtoImagem">
+                <!-- Imagem será inserida aqui -->
+            </div>
+            <div id="produtoInfo">
+                <!-- Info do produto será inserida aqui -->
+            </div>
+        </div>
+
+        <!-- Formulário adicional -->
+        <div style="display: grid; gap: 15px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Observação (opcional)</label>
+                <textarea id="modalObservacao" placeholder="Observações adicionais sobre o produto" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; min-height: 80px; resize: vertical;"></textarea>
+            </div>
+
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Categoria *</label>
+                <input type="text" id="modalCategoriaNome" required placeholder="Digite o nome da categoria" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px;" value="">
+                <small style="color: #666; font-size: 12px;">Se a categoria não existir, será criada automaticamente</small>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="finalizarCadastroProduto()" id="btnCadastrar">🚀 Cadastrar Produto</button>
+    </div>
+
+    <script>
+        // Carregar dados do produto quando o modal abre
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarDadosProduto();
+        });
+
+        function carregarDadosProduto() {
+            const produto = window.produtoEncontradoGlobal;
+            if (!produto) {
+                alert('Nenhum produto selecionado');
+                fecharModal();
+                return;
+            }
+
+            // Preencher preview do produto
+            const produtoImagem = document.getElementById('produtoImagem');
+            const produtoInfo = document.getElementById('produtoInfo');
+            const categoriaInput = document.getElementById('modalCategoriaNome');
+
+            produtoImagem.innerHTML = produto.imagemUrl ?
+                `<img src="${produto.imagemUrl}" alt="${produto.nome}" style="max-width: 80px; max-height: 80px; border-radius: 4px; border: 1px solid #ddd;">` :
+                '<div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;">Sem foto</div>';
+
+            produtoInfo.innerHTML = `
+                <h4 style="margin: 0 0 8px 0; color: #2c3e50;">${produto.nome}</h4>
+                <p style="margin: 0 0 4px 0; color: #666;"><strong>Código:</strong> ${produto.codigoBarras}</p>
+                ${produto.marca ? `<p style="margin: 0 0 4px 0; color: #666;"><strong>Marca:</strong> ${produto.marca}</p>` : ''}
+                ${produto.categoria ? `<p style="margin: 0 0 4px 0; color: #666;"><strong>Categoria Sugerida:</strong> ${produto.categoria}</p>` : ''}
+                ${produto.descricao ? `<p style="margin: 0 0 8px 0; color: #666;"><strong>Descrição:</strong> ${produto.descricao.substring(0, 80)}${produto.descricao.length > 80 ? '...' : ''}</p>` : ''}
+            `;
+
+            // Preencher categoria sugerida
+            categoriaInput.value = produto.categoria || '';
+        }
+
+        async function finalizarCadastroProduto() {
+            const produto = window.produtoEncontradoGlobal;
+            if (!produto) {
+                alert('Nenhum produto selecionado');
+                return;
+            }
+
+            const observacao = document.getElementById('modalObservacao').value.trim();
+            const categoriaNome = document.getElementById('modalCategoriaNome').value.trim();
+
+            if (!categoriaNome) {
+                alert('Categoria é obrigatória');
+                return;
+            }
+
+            const btnCadastrar = document.getElementById('btnCadastrar');
+            const originalText = btnCadastrar.innerHTML;
+            btnCadastrar.innerHTML = '<div class="loading" style="width: 16px; height: 16px;"></div> Salvando...';
+            btnCadastrar.disabled = true;
+
+            // Preparar dados do produto
+            const produtoData = {
+                nome: produto.nome.toUpperCase(),
+                codigoBarras: produto.codigoBarras,
+                imagem: produto.imagemUrl ? await urlToBase64(produto.imagemUrl) : null,
+                descricao: produto.descricao ? produto.descricao.toUpperCase() : null,
+                observacao: observacao ? observacao.toUpperCase() : null,
+                categoriaNome: categoriaNome.toUpperCase()
+            };
+
+            console.log('Dados sendo enviados:', produtoData);
+
+            try {
+                const response = await fetch(`${window.API_BASE_URL || 'http://localhost:3000'}/produtos`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(produtoData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ Produto "${result.nome}" cadastrado com sucesso!`);
+                    fecharModal();
+
+                    // Limpar dados globais
+                    window.produtoEncontradoGlobal = null;
+
+                    // Notificar o index.html para recarregar produtos
+                    if (window.parent && window.parent.carregarProdutos) {
+                        window.parent.carregarProdutos();
+                    }
+                } else {
+                    throw new Error(result.message || 'Erro ao cadastrar produto');
+                }
+
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao cadastrar produto: ' + error.message);
+            } finally {
+                btnCadastrar.innerHTML = originalText;
+                btnCadastrar.disabled = false;
+            }
+        }
+
+        function fecharModal() {
+            // Fecha o modal atual
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.remove();
+        }
+    </script>
+</body>
+</html>

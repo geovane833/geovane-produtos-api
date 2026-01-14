@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal - Cadastrar Categoria</title>
+</head>
+<body>
+    <div class="modal-header">
+        <span class="modal-icon">🏷️</span>
+        <h2>Cadastrar Categoria</h2>
+        <p>Adicione uma nova categoria ao sistema</p>
+    </div>
+    <div class="modal-body">
+        <div class="form-group">
+            <label for="categoriaNome">Nome da Categoria *</label>
+            <input type="text" id="categoriaNome" required placeholder="Ex: Bebidas, Alimentos" oninput="this.value = this.value.toUpperCase()">
+            <small>Digite o nome da nova categoria</small>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalCategoria()">Cancelar</button>
+        <button class="btn btn-primary" onclick="cadastrarCategoria()" id="btnCadastrarCategoria">🚀 Cadastrar Categoria</button>
+    </div>
+
+    <script>
+        // Usar as funções utilitárias globais se disponíveis
+        if (typeof API_BASE_URL === 'undefined') {
+            window.API_BASE_URL = 'http://localhost:3000';
+        }
+        if (typeof apiRequest === 'undefined') {
+            window.apiRequest = async function(endpoint, options = {}) {
+                const url = `${window.API_BASE_URL}${endpoint}`;
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                };
+
+                const response = await fetch(url, config);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `Erro: ${response.status}`);
+                }
+
+                return data;
+            };
+        }
+
+        // Funções específicas para este modal
+        function fecharModalCategoria() {
+            // Fecha o modal atual
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.remove();
+        }
+
+        async function cadastrarCategoria() {
+            const nome = document.getElementById('categoriaNome').value.trim();
+
+            if (!nome) {
+                alert('Nome da categoria é obrigatório');
+                return;
+            }
+
+            const btnCadastrar = document.getElementById('btnCadastrarCategoria');
+            const originalText = btnCadastrar.innerHTML;
+            btnCadastrar.innerHTML = '<div class="loading" style="width: 16px; height: 16px;"></div> Salvando...';
+            btnCadastrar.disabled = true;
+
+            try {
+                const categoriaData = {
+                    nome: nome.toUpperCase()
+                };
+
+                const response = await fetch(`${window.API_BASE_URL || 'http://localhost:3000'}/categorias`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(categoriaData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ Categoria "${result.nome}" cadastrada com sucesso!`);
+                    fecharModalCategoria();
+
+                    // Notificar o index.html para recarregar categorias
+                    if (window.parent && window.parent.carregarCategorias) {
+                        window.parent.carregarCategorias();
+                    }
+                } else {
+                    // Verificar se é erro de categoria já existente
+                    if (result.message && result.message.includes('já existe')) {
+                        alert(`⚠️ ${result.message}`);
+                    } else {
+                        throw new Error(result.message || 'Erro ao cadastrar categoria');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao cadastrar categoria: ' + error.message);
+            } finally {
+                btnCadastrar.innerHTML = originalText;
+                btnCadastrar.disabled = false;
+            }
+        }
+
+        // Focar no campo quando o modal abrir
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const input = document.getElementById('categoriaNome');
+                if (input) input.focus();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

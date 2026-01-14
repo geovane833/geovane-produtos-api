@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Produtos - Geovane API</title>
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🛍️ Sistema de Gerenciamento de Produtos</h1>
+        <p class="subtitle">Gerencie produtos e categorias com facilidade</p>
+
+        <!-- Abas de navegação -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('produtos')">📦 Produtos</button>
+            <button class="tab-button" onclick="showTab('categorias')">🏷️ Categorias</button>
+            <button class="tab-button" onclick="showTab('busca')">🔍 Busca EAN</button>
+        </div>
+
+        <!-- Aba de Produtos -->
+        <div id="produtos-tab" class="tab-content active">
+            <div class="section">
+                <h2>📝 Gerenciar Produtos</h2>
+                <a href="cadastrar-produto.html" class="btn btn-primary" style="text-decoration: none; margin-bottom: 10px; display: inline-block;">🚀 Cadastrar Produto</a>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                    Abre uma tela completa para cadastro de produtos com busca automática por código de barras
+                </p>
+                <p style="margin-top: 5px; color: #666; font-size: 14px;">
+                    Use a aba "🏷️ Categorias" para gerenciar categorias de produtos
+                </p>
+            </div>
+
+            <div class="section">
+                <h2>📋 Produtos Cadastrados</h2>
+
+                <!-- Estatísticas -->
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalProdutos">0</div>
+                        <div class="stat-label">Total de Produtos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="produtosComImagem">0</div>
+                        <div class="stat-label">Com Imagem</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="categoriasAtivas">0</div>
+                        <div class="stat-label">Categorias Ativas</div>
+                    </div>
+                </div>
+
+                <!-- Controles e filtros -->
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="filtroCategoria">📂 Filtrar por Categoria:</label>
+                        <select id="filtroCategoria" onchange="filtrarProdutos()">
+                            <option value="">🌟 Todos os produtos</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="carregarProdutos()" class="btn btn-secondary" title="Atualizar lista de produtos">
+                            🔄 Atualizar
+                        </button>
+                        <button onclick="limparFiltros()" class="btn btn-secondary" title="Limpar todos os filtros">
+                            🧹 Limpar Filtros
+                        </button>
+                    </div>
+                </div>
+
+                <div id="produtosList" class="list">
+                    <!-- Produtos serão exibidos aqui -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Aba de Categorias -->
+        <div id="categorias-tab" class="tab-content">
+            <div class="section">
+                <h2>🏷️ Cadastrar Categoria</h2>
+                <form id="categoriaForm" class="form">
+                    <div class="form-group">
+                        <label for="categoriaNome">Nome da Categoria *</label>
+                        <input type="text" id="categoriaNome" required placeholder="Ex: Bebidas, Alimentos" oninput="this.value = this.value.toUpperCase()">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">🚀 Cadastrar Categoria</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>📋 Categorias Cadastradas</h2>
+                <button onclick="carregarCategorias()" class="btn btn-secondary">� Atualizar Lista</button>
+                <div id="categoriasList" class="list">
+                    <!-- Categorias serão exibidas aqui -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Aba de Busca EAN -->
+        <div id="busca-tab" class="tab-content">
+            <div class="section">
+                <h2>🔍 Buscar Produto por EAN</h2>
+                <p>Digite o código EAN do produto para encontrar suas informações</p>
+
+                <div class="ean-search-section">
+                    <div class="ean-search-box">
+                        <input type="text" id="eanInput" placeholder="Digite o código EAN..." maxlength="18">
+                        <button onclick="buscarPorEAN()" class="btn btn-primary btn-large">
+                            🔍 Buscar Produto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultado da busca -->
+                <div id="resultadoBusca" class="resultado-busca" style="display: none;">
+                    <div id="produtoEncontrado" class="produto-card">
+                        <!-- Produto será exibido aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para código de barras -->
+    <div id="modalCodigoBarras" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <span class="modal-icon">📦</span>
+                <h2>Cadastrar Produto</h2>
+                <p>Digite o código de barras para buscar automaticamente as informações do produto</p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="codigoBarrasModal">Código de Barras *</label>
+                    <input type="text" id="codigoBarrasModal" placeholder="Ex: 7891234567890" maxlength="18">
+                    <small>Digite o código EAN do produto</small>
+                </div>
+                <div id="produtoInfo" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">📋 Produto Encontrado:</h4>
+                    <div id="produtoPreview"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModalCodigoBarras()">Cancelar</button>
+                <button class="btn btn-primary" onclick="buscarProdutoPorCodigo()" id="btnBuscar">🔍 Buscar Produto</button>
+                <button class="btn btn-success" onclick="preencherFormularioProduto()" id="btnPreencher" style="display: none;">✅ Usar Este Produto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Carregar scripts na ordem correta -->
+    <script src="shared/utils.js"></script>
+    <script src="shared/api.js"></script>
+    <script src="shared/modal-functions.js"></script>
+    <script src="shared/ui-functions.js"></script>
+    <script src="produto/product-functions.js"></script>
+    <script src="categoria/category-functions.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal - Cadastrar Produto</title>
+</head>
+<body>
+    <div class="modal-header">
+        <span class="modal-icon">📦</span>
+        <h2>Cadastrar Produto</h2>
+        <p>Digite o código de barras para buscar automaticamente as informações do produto</p>
+    </div>
+    <div class="modal-body">
+        <div class="form-group">
+            <label for="codigoBarrasModal">Código de Barras *</label>
+            <input type="text" id="codigoBarrasModal" placeholder="Ex: 7891234567890" maxlength="18">
+            <small>Digite o código EAN do produto</small>
+        </div>
+        <div id="produtoInfo" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <h4 style="color: #2c3e50; margin-bottom: 10px;">📋 Produto Encontrado:</h4>
+            <div id="produtoPreview"></div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalProduto()">Cancelar</button>
+        <button class="btn btn-primary" onclick="buscarProdutoPorCodigo()" id="btnBuscar">🔍 Buscar Produto</button>
+        <button class="btn btn-success" onclick="mostrarModalFinalizarCadastro()" id="btnPreencher" style="display: none;">✅ Usar Este Produto</button>
+    </div>
+
+    <script>
+        // Funções específicas para este modal
+        function fecharModalProduto() {
+            // Fecha o modal atual
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.remove();
+        }
+
+        // Usar as funções utilitárias globais se disponíveis
+        if (typeof API_BASE_URL === 'undefined') {
+            window.API_BASE_URL = 'http://localhost:3000';
+        }
+        if (typeof apiRequest === 'undefined') {
+            window.apiRequest = async function(endpoint, options = {}) {
+                const url = `${window.API_BASE_URL}${endpoint}`;
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                };
+
+                const response = await fetch(url, config);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `Erro: ${response.status}`);
+                }
+
+                return data;
+            };
+        }
+        if (typeof fileToBase64 === 'undefined') {
+            window.fileToBase64 = function(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => {
+                        const base64 = reader.result.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = error => reject(error);
+                });
+            };
+        }
+        if (typeof urlToBase64 === 'undefined') {
+            window.urlToBase64 = function(url) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'Anonymous';
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        const dataURL = canvas.toDataURL('image/jpeg');
+                        const base64 = dataURL.split(',')[1];
+                        resolve(base64);
+                    };
+                    img.onerror = function() {
+                        reject(new Error('Erro ao carregar imagem da URL'));
+                    };
+                    img.src = url;
+                });
+            };
+        }
+        if (typeof arrayBufferToBase64 === 'undefined') {
+            window.arrayBufferToBase64 = function(buffer) {
+                let binary = '';
+                const bytes = new Uint8Array(buffer);
+                const len = bytes.byteLength;
+                for (let i = 0; i < len; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return window.btoa(binary);
+            };
+        }
+
+        async function buscarProdutoPorCodigo() {
+            const codigoBarras = document.getElementById('codigoBarrasModal').value.trim();
+
+            if (!codigoBarras) {
+                alert('Digite um código de barras');
+                return;
+            }
+
+            const btnBuscar = document.getElementById('btnBuscar');
+            const btnPreencher = document.getElementById('btnPreencher');
+            const produtoInfo = document.getElementById('produtoInfo');
+            const produtoPreview = document.getElementById('produtoPreview');
+
+            // Mostrar loading
+            btnBuscar.innerHTML = '<div class="loading" style="width: 16px; height: 16px;"></div> Buscando...';
+            btnBuscar.disabled = true;
+
+            try {
+                // Primeiro verificar se já existe no nosso banco
+                try {
+                    const produtoExistente = await apiRequest(`/produtos/codigo/${codigoBarras}`);
+                    alert('Este produto já está cadastrado no sistema!');
+                    produtoPreview.innerHTML = `
+                        <div style="text-align: center; color: #e74c3c;">
+                            <h4>⚠️ Produto Já Cadastrado</h4>
+                            <p><strong>${produtoExistente.nome}</strong></p>
+                            <p>Categoria: ${produtoExistente.categoria ? produtoExistente.categoria.nome : 'N/A'}</p>
+                        </div>
+                    `;
+                    produtoInfo.style.display = 'block';
+                    btnBuscar.style.display = 'none';
+                    btnPreencher.style.display = 'none';
+                    return;
+                } catch (error) {
+                    // Produto não existe, continuar com busca externa
+                }
+
+                // Buscar através do backend local (evita CORS)
+                const dadosExternos = await apiRequest(`/produtos/buscar-externo/${codigoBarras}`);
+
+                if (!dadosExternos || dadosExternos.length === 0) {
+                    produtoPreview.innerHTML = `
+                        <div style="text-align: center; color: #7f8c8d;">
+                            <h4>❌ Produto Não Encontrado</h4>
+                            <p>Código de barras não encontrado na base de dados externa.</p>
+                            <p>Você pode cadastrar manualmente.</p>
+                        </div>
+                    `;
+                    produtoInfo.style.display = 'block';
+                    btnBuscar.style.display = 'none';
+                    btnPreencher.style.display = 'inline-block';
+                    produtoEncontradoGlobal = { codigoBarras: codigoBarras }; // Apenas código
+                    return;
+                }
+
+                // Usar o primeiro produto encontrado
+                const produtoExterno = dadosExternos[0];
+
+                // Preparar dados para preview
+                const produtoFormatado = {
+                    nome: produtoExterno.descricao || produtoExterno.nome || 'Nome não informado',
+                    codigoBarras: codigoBarras,
+                    descricao: produtoExterno.descricao_detalhada || produtoExterno.descricao || '',
+                    imagemUrl: produtoExterno.imagem || null,
+                    marca: produtoExterno.marca || '',
+                    categoria: produtoExterno.secao || produtoExterno.categoria || ''
+                };
+
+                // Salvar globalmente
+                window.produtoEncontradoGlobal = produtoFormatado;
+
+                // Mostrar preview
+                produtoPreview.innerHTML = `
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; align-items: start;">
+                        <div>
+                            ${produtoFormatado.imagemUrl ?
+                                `<img src="${produtoFormatado.imagemUrl}" alt="${produtoFormatado.nome}" style="max-width: 80px; max-height: 80px; border-radius: 4px; border: 1px solid #ddd;">` :
+                                '<div style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px;">Sem foto</div>'
+                            }
+                        </div>
+                        <div>
+                            <h4 style="margin: 0 0 8px 0; color: #2c3e50;">${produtoFormatado.nome}</h4>
+                            <p style="margin: 0 0 4px 0; color: #666;"><strong>Código:</strong> ${produtoFormatado.codigoBarras}</p>
+                            ${produtoFormatado.marca ? `<p style="margin: 0 0 4px 0; color: #666;"><strong>Marca:</strong> ${produtoFormatado.marca}</p>` : ''}
+                            ${produtoFormatado.categoria ? `<p style="margin: 0 0 4px 0; color: #666;"><strong>Categoria:</strong> ${produtoFormatado.categoria}</p>` : ''}
+                            ${produtoFormatado.descricao ? `<p style="margin: 0 0 8px 0; color: #666;"><strong>Descrição:</strong> ${produtoFormatado.descricao.substring(0, 100)}${produtoFormatado.descricao.length > 100 ? '...' : ''}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                produtoInfo.style.display = 'block';
+                btnBuscar.style.display = 'none';
+                btnPreencher.style.display = 'inline-block';
+
+                alert('Produto encontrado com sucesso!');
+
+            } catch (error) {
+                console.error('Erro ao buscar produto:', error);
+                produtoPreview.innerHTML = `
+                    <div style="text-align: center; color: #e74c3c;">
+                        <h4>❌ Erro na Busca</h4>
+                        <p>Não foi possível buscar as informações do produto.</p>
+                        <p>Tente novamente ou cadastre manualmente.</p>
+                    </div>
+                `;
+                produtoInfo.style.display = 'block';
+                btnBuscar.style.display = 'none';
+                btnPreencher.style.display = 'inline-block';
+                window.produtoEncontradoGlobal = { codigoBarras: codigoBarras }; // Apenas código
+
+                alert('Erro ao buscar produto. Você pode cadastrar manualmente.');
+            } finally {
+                // Restaurar botão
+                btnBuscar.innerHTML = '🔍 Buscar Produto';
+                btnBuscar.disabled = false;
+            }
+        }
+
+        function mostrarModalFinalizarCadastro() {
+            // Carregar o modal de finalização
+            fetch('modal-finalizar-produto.html')
+                .then(response => response.text())
+                .then(html => {
+                    // Criar modal overlay
+                    const modalOverlay = document.createElement('div');
+                    modalOverlay.className = 'modal-overlay';
+                    modalOverlay.innerHTML = html;
+                    document.body.appendChild(modalOverlay);
+
+                    // Focar no campo de categoria
+                    setTimeout(() => {
+                        const categoriaInput = modalOverlay.querySelector('#modalCategoriaNome');
+                        if (categoriaInput) categoriaInput.focus();
+                    }, 100);
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar modal de finalização:', error);
+                    alert('Erro ao carregar modal de finalização');
+                });
+        }
+    </script>
+</body>
+</html>

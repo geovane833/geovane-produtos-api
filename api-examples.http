@@ -1,0 +1,234 @@
+# =====================================================
+# EXEMPLOS DE REQUESTS HTTP PARA API CRUD
+# Geovane Produtos API
+# Use com extensão REST Client no VS Code ou tools como Postman
+# =====================================================
+
+### Base URL
+@baseUrl = http://localhost:3000
+
+# =====================================================
+# CREATE - CRIAR REGISTROS
+# =====================================================
+
+### Criar uma categoria
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nome": "BEBIDAS"
+}
+
+### Criar um produto (com imagem base64)
+POST {{baseUrl}}/produtos
+Content-Type: application/json
+
+{
+  "nome": "Coca-Cola 2L",
+  "codigoBarras": "7891234567890",
+  "observacao": "Produto importado",
+  "categoriaNome": "Bebidas",
+  "imagem": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+}
+
+### Criar produto sem imagem
+POST {{baseUrl}}/produtos
+Content-Type: application/json
+
+{
+  "nome": "Arroz Branco 5kg",
+  "codigoBarras": "7891234567891",
+  "observacao": "Produto nacional",
+  "categoriaNome": "Alimentos"
+}
+
+# =====================================================
+# READ - LER REGISTROS
+# =====================================================
+
+### Listar todas as categorias
+GET {{baseUrl}}/categorias
+
+### Buscar categoria por ID
+GET {{baseUrl}}/categorias/1
+
+### Listar todos os produtos
+GET {{baseUrl}}/produtos
+
+### Buscar produto por ID
+GET {{baseUrl}}/produtos/1
+
+### Buscar produto por código de barras (EAN)
+GET {{baseUrl}}/produtos/codigo/7891234567890
+
+### Buscar produtos por nome (parcial)
+GET {{baseUrl}}/produtos?nome=coca
+
+### Buscar produtos por nome (outra busca)
+GET {{baseUrl}}/produtos?nome=arroz
+
+# =====================================================
+# UPDATE - ATUALIZAR REGISTROS
+# =====================================================
+
+### Atualizar categoria
+PATCH {{baseUrl}}/categorias/1
+Content-Type: application/json
+
+{
+  "nome": "Bebidas Não Alcoólicas"
+}
+
+### Atualizar produto (sem imagem)
+PATCH {{baseUrl}}/produtos/1
+Content-Type: application/json
+
+{
+  "nome": "Coca-Cola 2L - Promoção",
+  "observacao": "Refrigerante Coca-Cola 2 litros - Preço especial"
+}
+
+### Atualizar produto (com nova imagem)
+PATCH {{baseUrl}}/produtos/2
+Content-Type: application/json
+
+{
+  "nome": "Arroz Branco 5kg Premium",
+  "observacao": "Produto premium, grãos selecionados",
+  "imagem": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+}
+
+# =====================================================
+# DELETE - EXCLUIR REGISTROS
+# =====================================================
+
+### Excluir produto
+DELETE {{baseUrl}}/produtos/1
+
+### Excluir categoria (cuidado: exclui produtos relacionados)
+DELETE {{baseUrl}}/categorias/1
+
+# =====================================================
+# EXEMPLOS DE RESPOSTAS ESPERADAS
+# =====================================================
+
+# CREATE Categoria - Status: 201 Created
+# {
+#   "id": 1,
+#   "nome": "Bebidas",
+#   "criadoEm": "2026-01-13T21:42:00.000Z",
+#   "atualizadoEm": "2026-01-13T21:42:00.000Z"
+# }
+
+# CREATE Produto - Status: 201 Created
+# {
+#   "id": 1,
+#   "nome": "Coca-Cola 2L",
+#   "codigoBarras": "7891234567890",
+#   "imagem": null, // ou Buffer se imagem foi enviada
+#   "observacao": "Produto importado",
+#   "categoriaId": 1,
+#   "categoria": {
+#     "id": 1,
+#     "nome": "Bebidas",
+#     "criadoEm": "2026-01-13T21:42:00.000Z",
+#     "atualizadoEm": "2026-01-13T21:42:00.000Z"
+#   },
+#   "criadoEm": "2026-01-13T21:42:00.000Z",
+#   "atualizadoEm": "2026-01-13T21:42:00.000Z"
+# }
+
+# READ - Listar Produtos - Status: 200 OK
+# [
+#   {
+#     "id": 1,
+#     "nome": "Coca-Cola 2L",
+#     "codigoBarras": "7891234567890",
+#     "imagem": null,
+#     "observacao": "Produto importado",
+#     "categoriaId": 1,
+#     "categoria": {
+#       "id": 1,
+#       "nome": "Bebidas",
+#       "criadoEm": "2026-01-13T21:42:00.000Z",
+#       "atualizadoEm": "2026-01-13T21:42:00.000Z"
+#     },
+#     "criadoEm": "2026-01-13T21:42:00.000Z",
+#     "atualizadoEm": "2026-01-13T21:42:00.000Z"
+#   }
+# ]
+
+# UPDATE - Status: 200 OK
+# Retorna o objeto atualizado
+
+# DELETE - Status: 200 OK
+# Retorna o objeto excluído
+
+# =====================================================
+# EXEMPLOS DE ERROS
+# =====================================================
+
+# Produto não encontrado - Status: 404 Not Found
+# {
+#   "statusCode": 404,
+#   "message": "Produto não encontrado"
+# }
+
+# Dados inválidos - Status: 400 Bad Request
+# {
+#   "statusCode": 400,
+#   "message": [
+#     "nome should not be empty",
+#     "categoriaId must be a positive number"
+#   ],
+#   "error": "Bad Request"
+# }
+
+# Violação de unicidade (código de barras duplicado) - Status: 400 Bad Request
+# {
+#   "statusCode": 400,
+#   "message": "Unique constraint violation"
+# }
+
+# =====================================================
+# TESTE RÁPIDO - FLUXO COMPLETO
+# =====================================================
+
+### 1. Criar categoria
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nome": "Bebidas Teste"
+}
+
+### 2. Criar produto
+POST {{baseUrl}}/produtos
+Content-Type: application/json
+
+{
+  "nome": "Produto Teste",
+  "codigoBarras": "9999999999999",
+  "observacao": "Produto para teste das operações CRUD",
+  "categoriaNome": "Bebidas Teste"
+}
+
+### 3. Buscar produto por EAN
+GET {{baseUrl}}/produtos/codigo/9999999999999
+
+### 4. Atualizar produto
+PATCH {{baseUrl}}/produtos/1
+Content-Type: application/json
+
+{
+  "nome": "Produto Teste - Atualizado"
+}
+
+### 5. Listar produtos
+GET {{baseUrl}}/produtos
+
+### 6. Excluir produto
+DELETE {{baseUrl}}/produtos/1
+
+### 7. Verificar exclusão
+GET {{baseUrl}}/produtos

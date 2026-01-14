@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal - Editar Produto</title>
+</head>
+<body>
+    <div class="modal-header">
+        <span class="modal-icon">✏️</span>
+        <h2>Editar Produto</h2>
+        <p>Modifique os dados do produto conforme necessário</p>
+    </div>
+    <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Nome do Produto *</label>
+                <input type="text" id="editNome" required style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Código de Barras</label>
+                <input type="text" id="editCodigoBarras" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 4px;">
+            </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Categoria *</label>
+            <select id="editCategoriaId" required style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 4px;">
+                <option value="">Carregando categorias...</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Descrição</label>
+            <textarea id="editDescricao" placeholder="Descrição detalhada do produto" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 4px; min-height: 60px; resize: vertical;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Observação</label>
+            <textarea id="editObservacao" placeholder="Observações adicionais" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 4px; min-height: 60px; resize: vertical;"></textarea>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Nova Imagem (opcional)</label>
+            <input type="file" id="editImagem" accept="image/*" style="width: 100%; padding: 8px; border: 2px solid #ddd; border-radius: 4px;">
+            <small style="color: #7f8c8d;">Deixe em branco para manter a imagem atual</small>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalEditar()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarEdicaoProduto()" id="btnSalvarEdicao">💾 Salvar Alterações</button>
+    </div>
+
+    <script>
+        // Usar as funções utilitárias globais se disponíveis
+        if (typeof API_BASE_URL === 'undefined') {
+            window.API_BASE_URL = 'http://localhost:3000';
+        }
+        if (typeof apiRequest === 'undefined') {
+            window.apiRequest = async function(endpoint, options = {}) {
+                const url = `${window.API_BASE_URL}${endpoint}`;
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                };
+
+                const response = await fetch(url, config);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `Erro: ${response.status}`);
+                }
+
+                return data;
+            };
+        }
+        if (typeof fileToBase64 === 'undefined') {
+            window.fileToBase64 = function(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => {
+                        const base64 = reader.result.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = error => reject(error);
+                });
+            };
+        }
+
+        let produtoIdAtual = null;
+
+        // Carregar dados do produto quando o modal abre
+        document.addEventListener('DOMContentLoaded', function() {
+            const produtoId = window.produtoParaEditar;
+            if (produtoId) {
+                carregarDadosProduto(produtoId);
+            } else {
+                alert('ID do produto não encontrado');
+                fecharModalEditar();
+            }
+        });
+
+        async function carregarDadosProduto(id) {
+            try {
+                const response = await fetch(`${window.API_BASE_URL || 'http://localhost:3000'}/produtos/${id}`);
+                const produto = await response.json();
+
+                if (response.ok) {
+                    produtoIdAtual = id;
+
+                    // Preencher campos
+                    document.getElementById('editNome').value = produto.nome || '';
+                    document.getElementById('editCodigoBarras').value = produto.codigoBarras || '';
+                    document.getElementById('editDescricao').value = produto.descricao || '';
+                    document.getElementById('editObservacao').value = produto.observacao || '';
+
+                    // Carregar categorias e selecionar a atual
+                    await carregarCategorias(produto.categoriaId);
+                } else {
+                    throw new Error('Erro ao carregar dados do produto');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar dados do produto: ' + error.message);
+                fecharModalEditar();
+            }
+        }
+
+        async function carregarCategorias(categoriaIdAtual) {
+            try {
+                const response = await fetch(`${window.API_BASE_URL || 'http://localhost:3000'}/categorias`);
+                const categorias = await response.json();
+
+                if (response.ok) {
+                    const select = document.getElementById('editCategoriaId');
+                    select.innerHTML = '<option value="">Selecione uma categoria</option>';
+
+                    categorias.forEach(categoria => {
+                        const option = document.createElement('option');
+                        option.value = categoria.id;
+                        option.textContent = categoria.nome;
+                        if (categoria.id === categoriaIdAtual) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar categorias:', error);
+            }
+        }
+
+        async function salvarEdicaoProduto() {
+            if (!produtoIdAtual) {
+                alert('ID do produto não encontrado');
+                return;
+            }
+
+            const nome = document.getElementById('editNome').value.trim();
+            const codigoBarras = document.getElementById('editCodigoBarras').value.trim() || null;
+            const categoriaId = parseInt(document.getElementById('editCategoriaId').value);
+            const descricao = document.getElementById('editDescricao').value.trim() || null;
+            const observacao = document.getElementById('editObservacao').value.trim() || null;
+
+            if (!nome) {
+                alert('Nome do produto é obrigatório');
+                return;
+            }
+
+            if (!categoriaId) {
+                alert('Categoria é obrigatória');
+                return;
+            }
+
+            const btnSalvar = document.getElementById('btnSalvarEdicao');
+            const originalText = btnSalvar.innerHTML;
+            btnSalvar.innerHTML = '<div class="loading" style="width: 16px; height: 16px;"></div> Salvando...';
+            btnSalvar.disabled = true;
+
+            try {
+                // Verificar se imagem foi alterada
+                const imagemFile = document.getElementById('editImagem').files[0];
+                let imagemBase64 = null;
+
+                if (imagemFile) {
+                    imagemBase64 = await fileToBase64(imagemFile);
+                }
+
+                const produtoData = {
+                    nome: nome.toUpperCase(),
+                    codigoBarras: codigoBarras ? codigoBarras.toUpperCase() : null,
+                    categoriaId: categoriaId,
+                    descricao: descricao ? descricao.toUpperCase() : null,
+                    observacao: observacao ? observacao.toUpperCase() : null
+                };
+
+                // Só incluir imagem se foi alterada
+                if (imagemBase64) {
+                    produtoData.imagem = imagemBase64;
+                }
+
+                const response = await fetch(`${window.API_BASE_URL || 'http://localhost:3000'}/produtos/${produtoIdAtual}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(produtoData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ Produto "${result.nome}" atualizado com sucesso!`);
+                    fecharModalEditar();
+
+                    // Notificar o index.html para recarregar produtos
+                    if (window.parent && window.parent.carregarProdutos) {
+                        window.parent.carregarProdutos();
+                    }
+                } else {
+                    throw new Error(result.message || 'Erro ao atualizar produto');
+                }
+
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao atualizar produto: ' + error.message);
+            } finally {
+                btnSalvar.innerHTML = originalText;
+                btnSalvar.disabled = false;
+            }
+        }
+
+        function fecharModalEditar() {
+            // Fecha o modal atual
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.remove();
+        }
+    </script>
+</body>
+</html>

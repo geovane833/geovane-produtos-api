@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar Produto - Sistema de Produtos</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <script src="shared/utils.js"></script>
+    <script src="shared/api.js"></script>
+    <script src="shared/ui-functions.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Cadastrar Produto</h1>
+        <p class="subtitle">Busque informações automaticamente por código de barras</p>
+
+        <!-- Botão voltar -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn btn-secondary">← Voltar ao Início</a>
+        </div>
+
+        <!-- Seção de busca por código de barras -->
+        <div class="section">
+            <h2>🔍 Buscar Produto</h2>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="codigoBarrasBusca">Código de Barras *</label>
+                <input type="text" id="codigoBarrasBusca" placeholder="Ex: 7891234567890" maxlength="18" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;">
+                <small style="color: #666; font-size: 12px;">Digite o código EAN do produto</small>
+            </div>
+            <button onclick="buscarProduto()" class="btn btn-primary" id="btnBuscarProduto" style="width: 100%; padding: 15px; font-size: 16px;">🔍 Buscar Produto</button>
+        </div>
+
+        <!-- Seção de produto encontrado -->
+        <div id="produtoEncontradoSection" class="section" style="display: none;">
+            <h2>📋 Produto Encontrado</h2>
+            <div id="produtoPreview" style="display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: start; padding: 20px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 20px;">
+                <!-- Imagem e informações serão inseridas aqui -->
+            </div>
+            <div style="text-align: center;">
+                <button onclick="mostrarFormularioCadastro()" class="btn btn-success" style="padding: 15px 30px; font-size: 16px;">✅ Usar Este Produto</button>
+                <button onclick="limparBusca()" class="btn btn-secondary" style="padding: 15px 30px; font-size: 16px; margin-left: 10px;">🔄 Buscar Outro</button>
+            </div>
+        </div>
+
+        <!-- Seção de produto não encontrado -->
+        <div id="produtoNaoEncontradoSection" class="section" style="display: none;">
+            <h2>❌ Produto Não Encontrado</h2>
+            <div style="text-align: center; padding: 40px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #856404; margin-bottom: 15px;">Código não encontrado na base de dados</h3>
+                <p style="color: #856404; margin-bottom: 20px;">Você pode cadastrar manualmente as informações do produto.</p>
+                <button onclick="mostrarFormularioCadastro()" class="btn btn-warning" style="padding: 15px 30px; font-size: 16px;">✏️ Cadastrar Manualmente</button>
+            </div>
+        </div>
+
+        <!-- Modal para criar categoria -->
+        <div id="modalCategoriaSection" class="section" style="display: none;">
+            <h2>🏷️ Criar Nova Categoria</h2>
+            <form id="formularioCategoria">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="novaCategoriaNome">Nome da Categoria *</label>
+                    <input type="text" id="novaCategoriaNome" required placeholder="Ex: Bebidas, Alimentos" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;" oninput="this.value = this.value.toUpperCase()">
+                    <small style="color: #666; font-size: 12px;">Digite o nome da nova categoria</small>
+                </div>
+
+                <div style="text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 30px; font-size: 16px; font-weight: 600;">🚀 Criar Categoria</button>
+                    <button type="button" onclick="fecharModalCategoria()" class="btn btn-secondary" style="padding: 12px 30px; font-size: 16px; margin-left: 15px;">❌ Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Formulário de cadastro -->
+        <div id="formularioCadastroSection" class="section" style="display: none;">
+            <h2>📝 Finalizar Cadastro</h2>
+            <form id="formularioProduto">
+                <!-- Preview da imagem -->
+                <div class="form-group" style="margin-bottom: 30px; text-align: center;">
+                    <label style="display: block; margin-bottom: 15px; font-weight: 600; color: #2c3e50; font-size: 16px;">🖼️ Imagem do Produto</label>
+                    <div id="imagemPreviewContainer" style="display: inline-block; position: relative; margin-bottom: 15px;">
+                        <!-- Imagem será inserida aqui -->
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <input type="file" id="novaImagemProduto" accept="image/*" style="display: none;" onchange="previewNovaImagem(event)">
+                        <button type="button" onclick="document.getElementById('novaImagemProduto').click()" class="btn btn-secondary" style="margin-right: 10px;">📸 Trocar Imagem</button>
+                        <button type="button" onclick="removerImagem()" class="btn btn-danger">🗑️ Remover Imagem</button>
+                    </div>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 10px;">Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB</small>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="nomeProduto">Nome do Produto *</label>
+                        <input type="text" id="nomeProduto" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;" oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    <div class="form-group">
+                        <label for="codigoBarrasProduto">Código de Barras</label>
+                        <input type="text" id="codigoBarrasProduto" readonly style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; background: #f8f9fa;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="descricaoProduto">Descrição</label>
+                    <textarea id="descricaoProduto" placeholder="Descrição detalhada do produto" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; min-height: 100px; resize: vertical; font-size: 16px;"></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="observacaoProduto">Observação (opcional)</label>
+                    <textarea id="observacaoProduto" placeholder="Observações adicionais sobre o produto" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; min-height: 100px; resize: vertical; font-size: 16px;"></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 30px;">
+                    <label for="categoriaProduto">Categoria *</label>
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: end;">
+                        <div>
+                            <input type="text" id="categoriaSearch" placeholder="Buscar categoria..." style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; margin-bottom: 10px;" oninput="filtrarCategorias()">
+                            <select id="categoriaProduto" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;">
+                                <option value="">Carregando categorias...</option>
+                            </select>
+                        </div>
+                        <button type="button" onclick="abrirModalCategoria()" class="btn btn-secondary" style="padding: 12px 20px; height: fit-content;">🏷️ Nova</button>
+                    </div>
+                    <small style="color: #666; font-size: 12px;">Selecione uma categoria existente ou crie uma nova</small>
+                </div>
+
+                <div style="text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
+                    <button type="submit" class="btn btn-primary" style="padding: 15px 40px; font-size: 18px; font-weight: 600;">🚀 Cadastrar Produto</button>
+                    <button type="button" onclick="limparFormulario()" class="btn btn-secondary" style="padding: 15px 40px; font-size: 18px; margin-left: 15px;">🧹 Limpar</button>
+                    <a href="index.html" class="btn btn-secondary" style="padding: 15px 40px; font-size: 18px; margin-left: 15px; text-decoration: none; display: inline-block;">← Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Configuração da página
+        window.API_BASE_URL = 'http://localhost:3000';
+
+        // Variável global para armazenar produto encontrado
+        let produtoEncontradoGlobal = null;
+
+        // Inicialização da página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎯 Inicializando página de cadastro de produto');
+            carregarCategorias();
+        });
+
+        // Função para buscar produto
+        async function buscarProduto() {
+            const codigoBarras = document.getElementById('codigoBarrasBusca').value.trim();
+
+            if (!codigoBarras) {
+                notificationManager.show('Digite um código de barras', 'warning');
+                return;
+            }
+
+            const btnBuscar = document.getElementById('btnBuscarProduto');
+            const originalText = btnBuscar.textContent;
+            btnBuscar.textContent = '🔄 Buscando...';
+            btnBuscar.disabled = true;
+
+            try {
+                // Buscar através do backend
+                const response = await fetch(`${window.API_BASE_URL}/produtos/buscar-externo/${codigoBarras}`);
+
+                if (!response.ok) {
+                    // Produto não encontrado
+                    mostrarProdutoNaoEncontrado(codigoBarras);
+                    return;
+                }
+
+                // Produto encontrado
+                const produtosExternos = await response.json();
+                const produtoExterno = Array.isArray(produtosExternos) ? produtosExternos[0] : produtosExternos;
+
+                // Preparar dados
+                produtoEncontradoGlobal = {
+                    nome: produtoExterno.nome || produtoExterno.descricao || 'Nome não informado',
+                    codigoBarras: codigoBarras,
+                    descricao: produtoExterno.descricao_detalhada || produtoExterno.descricao || '',
+                    imagemBase64: produtoExterno.imagemBase64 || null,
+                    marca: produtoExterno.marca || 'Marca não informada',
+                    categoria: produtoExterno.secao || 'Categoria Geral'
+                };
+
+                mostrarProdutoEncontrado();
+
+            } catch (error) {
+                console.error('Erro ao buscar produto:', error);
+                mostrarProdutoNaoEncontrado(codigoBarras);
+            } finally {
+                btnBuscar.textContent = originalText;
+                btnBuscar.disabled = false;
+            }
+        }
+
+        // Função para mostrar produto encontrado
+        function mostrarProdutoEncontrado() {
+            const produto = produtoEncontradoGlobal;
+            const produtoPreview = document.getElementById('produtoPreview');
+
+            produtoPreview.innerHTML = `
+                <div>
+                    ${produto.imagemBase64 ?
+                        `<img src="data:image/jpeg;base64,${produto.imagemBase64}" alt="${produto.nome}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">` :
+                        '<div style="width: 120px; height: 120px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 2px solid #ddd;">Sem imagem</div>'
+                    }
+                </div>
+                <div>
+                    <h3 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 1.4em;">${produto.nome}</h3>
+                    <p style="margin: 0 0 5px 0; color: #666;"><strong>📱 Código:</strong> ${produto.codigoBarras}</p>
+                    ${produto.marca !== 'Marca não informada' ? `<p style="margin: 0 0 5px 0; color: #666;"><strong>🏷️ Marca:</strong> ${produto.marca}</p>` : ''}
+                    ${produto.categoria !== 'Categoria Geral' ? `<p style="margin: 0 0 5px 0; color: #666;"><strong>📂 Categoria Sugerida:</strong> ${produto.categoria}</p>` : ''}
+                    <p style="margin: 0 0 10px 0; color: #666;"><strong>📝 Descrição:</strong> ${produto.descricao.substring(0, 150)}${produto.descricao.length > 150 ? '...' : ''}</p>
+                </div>
+            `;
+
+            document.getElementById('produtoEncontradoSection').style.display = 'block';
+            document.getElementById('produtoNaoEncontradoSection').style.display = 'none';
+        }
+
+        // Função para mostrar produto não encontrado
+        function mostrarProdutoNaoEncontrado(codigoBarras) {
+            produtoEncontradoGlobal = { codigoBarras: codigoBarras };
+            document.getElementById('produtoEncontradoSection').style.display = 'none';
+            document.getElementById('produtoNaoEncontradoSection').style.display = 'block';
+        }
+
+        // Função para mostrar formulário de cadastro
+        function mostrarFormularioCadastro() {
+            document.getElementById('formularioCadastroSection').style.display = 'block';
+
+            // Preencher campos se houver produto encontrado
+            if (produtoEncontradoGlobal) {
+                document.getElementById('nomeProduto').value = produtoEncontradoGlobal.nome || '';
+                document.getElementById('codigoBarrasProduto').value = produtoEncontradoGlobal.codigoBarras || '';
+                document.getElementById('descricaoProduto').value = produtoEncontradoGlobal.descricao || '';
+            }
+
+            // Mostrar preview da imagem
+            atualizarPreviewImagem();
+        }
+
+        // Função para atualizar preview da imagem
+        function atualizarPreviewImagem() {
+            const container = document.getElementById('imagemPreviewContainer');
+            const imagemBase64 = produtoEncontradoGlobal?.imagemBase64;
+
+            if (imagemBase64) {
+                container.innerHTML = `
+                    <img id="imagemAtualProduto" src="data:image/jpeg;base64,${imagemBase64}" alt="Imagem do produto"
+                         style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">
+                `;
+            } else {
+                container.innerHTML = `
+                    <div style="width: 150px; height: 150px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; border: 2px solid #ddd;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; margin-bottom: 5px;">📷</div>
+                            <div style="font-size: 12px;">Sem imagem</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Função para preview de nova imagem
+        function previewNovaImagem(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validar tamanho (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                notificationManager.show('Imagem muito grande! Tamanho máximo: 5MB', 'error');
+                event.target.value = '';
+                return;
+            }
+
+            // Validar tipo
+            if (!file.type.startsWith('image/')) {
+                notificationManager.show('Por favor, selecione apenas arquivos de imagem.', 'error');
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const container = document.getElementById('imagemPreviewContainer');
+                container.innerHTML = `
+                    <img id="imagemAtualProduto" src="${e.target.result}" alt="Nova imagem do produto"
+                         style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #4CAF50;">
+                    <div style="position: absolute; top: -5px; right: -5px; background: #4CAF50; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px;">✓</div>
+                `;
+
+                // Armazenar arquivo selecionado
+                produtoEncontradoGlobal.novaImagemFile = file;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Função para remover imagem
+        function removerImagem() {
+            // Limpar input file
+            document.getElementById('novaImagemProduto').value = '';
+
+            // Resetar preview
+            atualizarPreviewImagem();
+
+            // Remover arquivo selecionado
+            if (produtoEncontradoGlobal) {
+                delete produtoEncontradoGlobal.novaImagemFile;
+                produtoEncontradoGlobal.imagemBase64 = null;
+            }
+        }
+
+        // Função para limpar busca
+        function limparBusca() {
+            document.getElementById('codigoBarrasBusca').value = '';
+            document.getElementById('produtoEncontradoSection').style.display = 'none';
+            document.getElementById('produtoNaoEncontradoSection').style.display = 'none';
+            document.getElementById('formularioCadastroSection').style.display = 'none';
+            produtoEncontradoGlobal = null;
+        }
+
+        // Função para limpar formulário
+        function limparFormulario() {
+            document.getElementById('formularioProduto').reset();
+            // Resetar preview da imagem
+            atualizarPreviewImagem();
+            // Limpar arquivo selecionado
+            document.getElementById('novaImagemProduto').value = '';
+            if (produtoEncontradoGlobal) {
+                delete produtoEncontradoGlobal.novaImagemFile;
+            }
+        }
+
+        // Função para carregar categorias
+        async function carregarCategorias() {
+            try {
+                const response = await fetch(`${window.API_BASE_URL}/categorias`);
+                const categorias = await response.json();
+
+                if (response.ok) {
+                    const categoriaSelect = document.getElementById('categoriaProduto');
+                    categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+
+                    categorias.forEach(categoria => {
+                        const option = document.createElement('option');
+                        option.value = categoria.id;
+                        option.textContent = categoria.nome;
+                        categoriaSelect.appendChild(option);
+                    });
+
+                    // Armazenar categorias para filtro
+                    window.categoriasList = categorias;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar categorias:', error);
+            }
+        }
+
+        // Função para filtrar categorias
+        function filtrarCategorias() {
+            const searchInput = document.getElementById('categoriaSearch');
+            const categoriaSelect = document.getElementById('categoriaProduto');
+
+            if (!searchInput || !categoriaSelect || !window.categoriasList) return;
+
+            const searchTerm = searchInput.value.toLowerCase();
+
+            // Reset select
+            categoriaSelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+
+            // Filtrar e adicionar categorias
+            window.categoriasList.forEach(categoria => {
+                if (categoria.nome.toLowerCase().includes(searchTerm)) {
+                    const option = document.createElement('option');
+                    option.value = categoria.id;
+                    option.textContent = categoria.nome;
+                    categoriaSelect.appendChild(option);
+                }
+            });
+
+            // Adicionar opção para criar nova categoria
+            if (categoriaSelect.options.length === 1 && searchTerm) {
+                const option = document.createElement('option');
+                option.value = 'nova';
+                option.textContent = `Criar nova: "${searchTerm}"`;
+                categoriaSelect.appendChild(option);
+            }
+        }
+
+        // Função para abrir modal de categoria
+        function abrirModalCategoria() {
+            document.getElementById('modalCategoriaSection').style.display = 'block';
+            document.getElementById('formularioCadastroSection').style.display = 'none';
+
+            // Preencher com o termo de busca atual
+            const searchTerm = document.getElementById('categoriaSearch').value.trim();
+            if (searchTerm) {
+                document.getElementById('novaCategoriaNome').value = searchTerm.toUpperCase();
+            }
+
+            // Focar no input
+            setTimeout(() => {
+                document.getElementById('novaCategoriaNome').focus();
+            }, 100);
+        }
+
+        // Função para fechar modal de categoria
+        function fecharModalCategoria() {
+            document.getElementById('modalCategoriaSection').style.display = 'none';
+            document.getElementById('formularioCadastroSection').style.display = 'block';
+
+            // Limpar formulário
+            document.getElementById('formularioCategoria').reset();
+        }
+
+        // Event listener para formulário de categoria
+        document.getElementById('formularioCategoria').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const nome = document.getElementById('novaCategoriaNome').value.trim();
+
+            if (!nome) {
+                notificationManager.show('Nome da categoria é obrigatório', 'error');
+                return;
+            }
+
+            try {
+                const categoriaData = {
+                    nome: nome.toUpperCase()
+                };
+
+                console.log('Criando categoria:', categoriaData);
+
+                const response = await fetch(`${window.API_BASE_URL}/categorias`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(categoriaData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    notificationManager.show(`Categoria "${result.nome}" criada com sucesso!`, 'success');
+
+                    // Recarregar categorias
+                    await carregarCategorias();
+
+                    // Selecionar a nova categoria
+                    document.getElementById('categoriaProduto').value = result.id;
+
+                    // Fechar modal
+                    fecharModalCategoria();
+
+                } else {
+                    // Verificar se é erro de categoria já existente
+                    if (result.message && result.message.includes('já existe')) {
+                        notificationManager.show(result.message, 'warning');
+                        // Mesmo assim, tentar selecionar a categoria existente
+                        await carregarCategorias();
+                        // Procurar categoria com mesmo nome
+                        const categoriaExistente = window.categoriasList?.find(cat => cat.nome.toUpperCase() === nome.toUpperCase());
+                        if (categoriaExistente) {
+                            document.getElementById('categoriaProduto').value = categoriaExistente.id;
+                            fecharModalCategoria();
+                        }
+                    } else {
+                        throw new Error(result.message || 'Erro ao criar categoria');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erro:', error);
+                notificationManager.show('Erro ao criar categoria: ' + error.message, 'error');
+            }
+        });
+
+        // Função para submeter formulário
+        document.getElementById('formularioProduto').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const nome = document.getElementById('nomeProduto').value.trim();
+            const codigoBarras = document.getElementById('codigoBarrasProduto').value.trim();
+            const descricao = document.getElementById('descricaoProduto').value.trim();
+            const observacao = document.getElementById('observacaoProduto').value.trim();
+            const categoriaId = document.getElementById('categoriaProduto').value;
+
+            if (!nome) {
+                notificationManager.show('Nome do produto é obrigatório', 'error');
+                return;
+            }
+
+            if (!categoriaId || categoriaId === 'nova') {
+                notificationManager.show('Selecione uma categoria válida', 'error');
+                return;
+            }
+
+            try {
+                // Preparar imagem
+                let imagemBase64 = null;
+
+                if (produtoEncontradoGlobal?.novaImagemFile) {
+                    // Usar nova imagem selecionada pelo usuário
+                    imagemBase64 = await fileToBase64(produtoEncontradoGlobal.novaImagemFile);
+                    console.log('Usando nova imagem selecionada pelo usuário');
+                } else if (produtoEncontradoGlobal?.imagemBase64) {
+                    // Usar imagem da API
+                    imagemBase64 = produtoEncontradoGlobal.imagemBase64;
+                    console.log('Usando imagem da API');
+                } else {
+                    console.log('Produto sem imagem');
+                }
+
+                // Preparar dados do produto
+                const produtoData = {
+                    nome: nome.toUpperCase(),
+                    codigoBarras: codigoBarras || null,
+                    imagem: imagemBase64,
+                    descricao: descricao ? descricao.toUpperCase() : null,
+                    observacao: observacao ? observacao.toUpperCase() : null,
+                    categoriaId: parseInt(categoriaId)
+                };
+
+                console.log('Enviando dados:', produtoData);
+
+                const response = await fetch(`${window.API_BASE_URL}/produtos`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(produtoData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    notificationManager.show(`Produto "${result.nome}" cadastrado com sucesso!`, 'success');
+                    limparFormulario();
+                    limparBusca();
+                } else if (response.status === 409) {
+                    // Produto já existe
+                    notificationManager.show('Produto já existe', 'warning');
+                } else {
+                    throw new Error(result.message || 'Erro ao cadastrar produto');
+                }
+
+            } catch (error) {
+                console.error('Erro:', error);
+                notificationManager.show(error.message || 'Erro desconhecido', 'error');
+            }
+        });
+
+        // Função para converter arquivo em base64
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Função para converter URL em base64
+        async function urlToBase64(url) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const base64 = reader.result.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            } catch (error) {
+                console.warn('Erro ao converter imagem:', error);
+                return null;
+            }
+        }
+    </script>
+</body>
+</html>
