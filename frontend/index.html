@@ -86,7 +86,25 @@
 
                     <div class="form-group">
                         <label for="categoriaImagem">Imagem da Categoria (opcional)</label>
-                        <input type="file" id="categoriaImagem" accept="image/*" onchange="previewCategoriaImagem(event)">
+
+                        <!-- Opções de upload -->
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <button type="button" onclick="document.getElementById('categoriaImagem').click()" class="btn btn-secondary" style="flex: 1;">📁 Escolher Arquivo</button>
+                                <span style="align-self: center; color: #666;">ou</span>
+                                <button type="button" onclick="alternarInputUrl()" class="btn btn-secondary" style="flex: 1;">🔗 Usar URL</button>
+                            </div>
+
+                            <!-- Input de arquivo (padrão) -->
+                            <input type="file" id="categoriaImagem" accept="image/*" onchange="previewCategoriaImagem(event)" style="display: none;">
+
+                            <!-- Input de URL (alternativo) -->
+                            <div id="categoriaUrlContainer" style="display: none;">
+                                <input type="url" id="categoriaImagemUrl" placeholder="https://exemplo.com/imagem.jpg" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; margin-bottom: 10px;">
+                                <button type="button" onclick="previewCategoriaImagemPorUrl()" class="btn btn-primary" style="width: 100%;">🔍 Carregar Imagem</button>
+                            </div>
+                        </div>
+
                         <small style="color: #666; font-size: 12px;">Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB</small>
                         <div id="categoriaImagemPreview" style="margin-top: 10px; display: none;">
                             <img id="categoriaImagemImg" style="max-width: 100px; max-height: 100px; border-radius: 8px; border: 2px solid #ddd;" alt="Preview">
