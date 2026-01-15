@@ -1,61 +1,155 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modal - Editar Categoria</title>
-    <link rel="stylesheet" href="../styles/styles.css">
-</head>
-<body>
-    <div class="modal-header">
+<!-- Modal de Editar Categoria - Conteúdo HTML (inserido dinamicamente pelo JavaScript) -->
+<div class="modal-header">
+    <div class="modal-icon-wrapper">
         <span class="modal-icon">✏️</span>
-        <h2>Editar Categoria</h2>
-        <p>Modifique as informações da categoria</p>
     </div>
-    <div class="modal-body">
+    <h2 class="modal-title">Editar Categoria</h2>
+    <p class="modal-subtitle">Modifique as informações da categoria selecionada</p>
+</div>
+
+<div class="modal-body">
+    <form class="edit-category-form">
+        <!-- Campo Nome da Categoria -->
         <div class="form-group">
-            <label for="editCategoriaNome">Nome da Categoria *</label>
-            <input type="text" id="editCategoriaNome" required placeholder="Ex: Bebidas, Alimentos" oninput="this.value = this.value.toUpperCase()">
-            <small>Digite o nome da categoria</small>
+            <label for="editCategoriaNome" class="form-label">
+                <span class="label-icon">🏷️</span>
+                Nome da Categoria
+                <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+                <input
+                    type="text"
+                    id="editCategoriaNome"
+                    class="form-input"
+                    required
+                    placeholder="Ex: Bebidas, Alimentos, Doces..."
+                    maxlength="50"
+                    oninput="this.value = this.value.toUpperCase()"
+                >
+                <div class="input-icon">📝</div>
+            </div>
+            <small class="form-help">Digite o nome da categoria (máximo 50 caracteres)</small>
         </div>
 
+        <!-- Seção de Imagem da Categoria -->
         <div class="form-group">
-            <label>Imagem da Categoria</label>
+            <label class="form-label">
+                <span class="label-icon">🖼️</span>
+                Imagem da Categoria
+                <span class="optional">(opcional)</span>
+            </label>
 
-            <!-- Preview da imagem atual -->
-            <div id="editCategoriaImagemPreview" style="display: none; margin-bottom: 15px;">
-                <div style="position: relative; display: inline-block;">
-                    <img id="editCategoriaImagemImg" src="" alt="Preview" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">
-                    <button type="button" onclick="removerImagemCategoria()" style="position: absolute; top: -8px; right: -8px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;">×</button>
+            <!-- Preview da imagem atual com design melhorado -->
+            <div id="editCategoriaImagemPreview" class="image-preview-container" style="display: none;">
+                <div class="image-preview-card">
+                    <div class="image-preview-header">
+                        <span class="preview-label">Imagem Atual</span>
+                        <button
+                            type="button"
+                            class="remove-image-btn"
+                            onclick="removerImagemCategoria()"
+                            title="Remover imagem"
+                        >
+                            <span class="remove-icon">×</span>
+                        </button>
+                    </div>
+                    <div class="image-preview-content">
+                        <img
+                            id="editCategoriaImagemImg"
+                            src=""
+                            alt="Preview da categoria"
+                            class="preview-image"
+                        >
+                    </div>
+                    <div class="image-preview-footer">
+                        <small class="preview-help">Clique no × para remover a imagem atual</small>
+                    </div>
                 </div>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Clique no × para remover a imagem atual</p>
             </div>
 
-            <!-- Opções para alterar imagem -->
-            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <button type="button" class="btn btn-secondary" onclick="alternarInputArquivoCategoria()" id="btnArquivoCategoria">📁 Escolher Arquivo</button>
-                <button type="button" class="btn btn-secondary" onclick="alternarInputUrlCategoria()" id="btnUrlCategoria">🔗 Usar URL</button>
+            <!-- Botões de ação para imagem -->
+            <div class="image-action-buttons">
+                <button
+                    type="button"
+                    class="image-action-btn file-btn"
+                    onclick="alternarInputArquivoCategoria()"
+                    id="btnArquivoCategoria"
+                >
+                    <span class="btn-icon">📁</span>
+                    <span class="btn-text">Escolher Arquivo</span>
+                </button>
+                <button
+                    type="button"
+                    class="image-action-btn url-btn"
+                    onclick="alternarInputUrlCategoria()"
+                    id="btnUrlCategoria"
+                >
+                    <span class="btn-icon">🔗</span>
+                    <span class="btn-text">Usar URL</span>
+                </button>
             </div>
 
-            <!-- Input de arquivo (inicialmente oculto) -->
-            <div id="editCategoriaArquivoContainer" style="display: none; margin-bottom: 10px;">
-                <input type="file" id="editCategoriaImagem" accept="image/*" onchange="previewEditarCategoriaImagem(event)">
-                <small>Selecione uma imagem do seu computador (máx. 5MB)</small>
+            <!-- Input de arquivo com design melhorado -->
+            <div id="editCategoriaArquivoContainer" class="input-section file-input-section" style="display: none;">
+                <div class="input-wrapper">
+                    <input
+                        type="file"
+                        id="editCategoriaImagem"
+                        accept="image/*"
+                        onchange="previewEditarCategoriaImagem(event)"
+                        class="file-input"
+                    >
+                    <div class="file-input-label">
+                        <span class="file-icon">📎</span>
+                        <span class="file-text">Clique para selecionar uma imagem</span>
+                    </div>
+                </div>
+                <small class="form-help">Formatos aceitos: JPG, PNG, GIF, WebP (máx. 5MB)</small>
             </div>
 
-            <!-- Input de URL (inicialmente oculto) -->
-            <div id="editCategoriaUrlContainer" style="display: none; margin-bottom: 10px;">
-                <input type="url" id="editCategoriaImagemUrl" placeholder="https://exemplo.com/imagem.jpg">
-                <button type="button" class="btn btn-primary" onclick="previewEditarCategoriaImagemPorUrl()">🔍 Carregar Imagem</button>
-                <small>Digite a URL da imagem para carregá-la</small>
+            <!-- Input de URL com design melhorado -->
+            <div id="editCategoriaUrlContainer" class="input-section url-input-section" style="display: none;">
+                <div class="url-input-group">
+                    <div class="input-wrapper">
+                        <input
+                            type="url"
+                            id="editCategoriaImagemUrl"
+                            placeholder="https://exemplo.com/imagem.jpg"
+                            class="form-input url-input"
+                        >
+                        <div class="input-icon">🌐</div>
+                    </div>
+                    <button
+                        type="button"
+                        class="load-url-btn"
+                        onclick="previewEditarCategoriaImagemPorUrl()"
+                    >
+                        <span class="load-icon">🔍</span>
+                        <span class="load-text">Carregar</span>
+                    </button>
+                </div>
+                <small class="form-help">Cole o link direto da imagem para carregá-la</small>
             </div>
         </div>
-    </div>
-    <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="fecharModalEditarCategoria()">Cancelar</button>
-        <button class="btn btn-primary" onclick="salvarEditarCategoria()" id="btnSalvarEditarCategoria">💾 Salvar Alterações</button>
-    </div>
+    </form>
+</div>
 
-
-</body>
-</html>
+<div class="modal-footer">
+    <button
+        type="button"
+        class="btn btn-secondary cancel-btn"
+        onclick="fecharModalEditarCategoria()"
+    >
+        <span class="btn-icon">❌</span>
+        <span class="btn-text">Cancelar</span>
+    </button>
+    <button
+        type="button"
+        class="btn btn-primary save-btn"
+        onclick="salvarEditarCategoria()"
+        id="btnSalvarEditarCategoria"
+    >
+        <span class="btn-icon">💾</span>
+        <span class="btn-text">Salvar Alterações</span>
+    </button>
+</div>
