@@ -10,7 +10,7 @@ import('./produto/product-functions.js');
 import('./categoria/category-functions.js');
 
 // Configuração global da API
-window.API_BASE_URL = 'http://localhost:3000';
+window.API_BASE_URL = 'https://geovane-produtos-api.onrender.com';
 
 // Funções para abrir modais criados dinamicamente
 function abrirModalProduto() {
