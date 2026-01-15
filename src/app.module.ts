@@ -17,7 +17,7 @@ import { ProdutosModule } from './modules/produtos/produtos.module';
       ],
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'frontend'),
+      rootPath: join(__dirname, '..', 'frontend'),
     }),
     CategoriasModule,
     ProdutosModule,
