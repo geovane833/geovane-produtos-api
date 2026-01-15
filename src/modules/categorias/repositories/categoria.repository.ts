@@ -44,14 +44,46 @@ export class CategoriaRepository {
   }
 
   async update(id: number, data: Partial<CreateCategoriaDto>): Promise<any> {
-    const updateData: any = { ...data };
-    if (data.imagem) {
-      updateData.imagem = Buffer.from(data.imagem, 'base64');
+    console.log('CategoriaRepository.update called with id:', id, 'data:', data);
+    const updateData: any = {};
+
+    // Copiar apenas os campos que foram fornecidos
+    if (data.nome !== undefined) {
+      updateData.nome = data.nome;
     }
-    return this.prisma.categoria.update({
-      where: { id },
-      data: updateData,
-    });
+
+    // Para imagem, só incluir se foi fornecida explicitamente
+    if (data.imagem !== undefined) {
+      if (data.imagem === null) {
+        console.log('Setting imagem to null');
+        updateData.imagem = null;
+      } else {
+        console.log('Converting imagem from base64');
+        updateData.imagem = Buffer.from(data.imagem, 'base64');
+      }
+    } else {
+      console.log('Imagem not provided, not updating');
+    }
+
+    console.log('Final updateData for Prisma:', updateData);
+
+    if (Object.keys(updateData).length === 0) {
+      console.log('No fields to update, skipping Prisma call');
+      // Se não há nada para atualizar, buscar e retornar a categoria atual
+      return this.findById(id);
+    }
+
+    try {
+      const result = await this.prisma.categoria.update({
+        where: { id },
+        data: updateData,
+      });
+      console.log('Prisma update result:', result);
+      return result;
+    } catch (error) {
+      console.error('Prisma update error:', error);
+      throw error;
+    }
   }
 
   async delete(id: number): Promise<any> {

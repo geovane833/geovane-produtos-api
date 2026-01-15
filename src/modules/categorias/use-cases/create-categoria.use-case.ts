@@ -23,7 +23,8 @@ export class CreateCategoriaUseCase {
     }
 
     return this.categoriaRepository.create({
-      nome: nomeMaiusculo
+      nome: nomeMaiusculo,
+      imagem: createCategoriaDto.imagem
     });
   }
 }

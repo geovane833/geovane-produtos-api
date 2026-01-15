@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal - Editar Categoria</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body>
+    <div class="modal-header">
+        <span class="modal-icon">✏️</span>
+        <h2>Editar Categoria</h2>
+        <p>Modifique as informações da categoria</p>
+    </div>
+    <div class="modal-body">
+        <div class="form-group">
+            <label for="editCategoriaNome">Nome da Categoria *</label>
+            <input type="text" id="editCategoriaNome" required placeholder="Ex: Bebidas, Alimentos" oninput="this.value = this.value.toUpperCase()">
+            <small>Digite o nome da categoria</small>
+        </div>
+
+        <div class="form-group">
+            <label>Imagem da Categoria</label>
+
+            <!-- Preview da imagem atual -->
+            <div id="editCategoriaImagemPreview" style="display: none; margin-bottom: 15px;">
+                <div style="position: relative; display: inline-block;">
+                    <img id="editCategoriaImagemImg" src="" alt="Preview" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">
+                    <button type="button" onclick="removerImagemCategoria()" style="position: absolute; top: -8px; right: -8px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;">×</button>
+                </div>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Clique no × para remover a imagem atual</p>
+            </div>
+
+            <!-- Opções para alterar imagem -->
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="alternarInputArquivoCategoria()" id="btnArquivoCategoria">📁 Escolher Arquivo</button>
+                <button type="button" class="btn btn-secondary" onclick="alternarInputUrlCategoria()" id="btnUrlCategoria">🔗 Usar URL</button>
+            </div>
+
+            <!-- Input de arquivo (inicialmente oculto) -->
+            <div id="editCategoriaArquivoContainer" style="display: none; margin-bottom: 10px;">
+                <input type="file" id="editCategoriaImagem" accept="image/*" onchange="previewEditarCategoriaImagem(event)">
+                <small>Selecione uma imagem do seu computador (máx. 5MB)</small>
+            </div>
+
+            <!-- Input de URL (inicialmente oculto) -->
+            <div id="editCategoriaUrlContainer" style="display: none; margin-bottom: 10px;">
+                <input type="url" id="editCategoriaImagemUrl" placeholder="https://exemplo.com/imagem.jpg">
+                <button type="button" class="btn btn-primary" onclick="previewEditarCategoriaImagemPorUrl()">🔍 Carregar Imagem</button>
+                <small>Digite a URL da imagem para carregá-la</small>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalEditarCategoria()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarEditarCategoria()" id="btnSalvarEditarCategoria">💾 Salvar Alterações</button>
+    </div>
+
+
+</body>
+</html>

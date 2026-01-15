@@ -207,47 +207,95 @@ async function carregarCategoriasLista() {
 }
 
 async function editarCategoria(id, nomeAtual) {
-    criarModalInput(
-        'Editar Categoria',
-        'Digite o novo nome para a categoria:',
-        nomeAtual,
-        async function(novoNome) {
-            if (novoNome === null) return; // Cancelado
+    console.log('editarCategoria called with id:', id, 'nomeAtual:', nomeAtual);
+    try {
+        // Buscar dados completos da categoria
+        console.log('Fetching categoria data...');
+        const categoria = await apiRequest(`/categorias/${id}`);
+        console.log('Categoria data received:', categoria);
 
-            if (!novoNome || novoNome.trim() === '') {
-                if (typeof notificationManager !== 'undefined') {
-                    notificationManager.show('Nome da categoria é obrigatório', 'error');
-                }
-                return;
-            }
-
-            if (novoNome.toUpperCase() === nomeAtual.toUpperCase()) {
-                if (typeof notificationManager !== 'undefined') {
-                    notificationManager.show('O nome da categoria não foi alterado', 'info');
-                }
-                return;
-            }
-
-            try {
-                const categoriaAtualizada = await apiRequest(`/categorias/${id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ nome: novoNome.toUpperCase() })
-                });
-
-                if (typeof notificationManager !== 'undefined') {
-                    notificationManager.show(`Categoria atualizada para "${categoriaAtualizada.nome}" com sucesso!`, 'success');
-                }
-                carregarCategoriasLista();
-                if (typeof carregarCategorias === 'function') {
-                    carregarCategorias(); // Recarregar select se existir
-                }
-            } catch (error) {
-                if (typeof notificationManager !== 'undefined') {
-                    notificationManager.show('Erro ao atualizar categoria: ' + error.message, 'error');
-                }
-            }
+        // Remover modal existente se houver
+        const modalExistente = document.querySelector('.modal-overlay');
+        console.log('Existing modal:', modalExistente);
+        if (modalExistente) {
+            modalExistente.remove();
         }
-    );
+
+        // Criar overlay do modal
+        console.log('Creating modal overlay...');
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        console.log('Modal overlay created:', modalOverlay);
+
+        // Conteúdo do modal de edição
+        const modalContent = `
+            <div class="modal-header">
+                <span class="modal-icon">✏️</span>
+                <h2>Editar Categoria</h2>
+                <p>Modifique as informações da categoria</p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="editCategoriaNome">Nome da Categoria *</label>
+                    <input type="text" id="editCategoriaNome" required placeholder="Ex: Bebidas, Alimentos" oninput="this.value = this.value.toUpperCase()">
+                    <small>Digite o nome da categoria</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Imagem da Categoria</label>
+
+                    <!-- Preview da imagem atual -->
+                    <div id="editCategoriaImagemPreview" style="display: none; margin-bottom: 15px;">
+                        <div style="position: relative; display: inline-block;">
+                            <img id="editCategoriaImagemImg" src="" alt="Preview" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">
+                            <button type="button" onclick="removerImagemCategoria()" style="position: absolute; top: -8px; right: -8px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;">×</button>
+                        </div>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Clique no × para remover a imagem atual</p>
+                    </div>
+
+                    <!-- Opções para alterar imagem -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button type="button" class="btn btn-secondary" onclick="alternarInputArquivoCategoria()" id="btnArquivoCategoria">📁 Escolher Arquivo</button>
+                        <button type="button" class="btn btn-secondary" onclick="alternarInputUrlCategoria()" id="btnUrlCategoria">🔗 Usar URL</button>
+                    </div>
+
+                    <!-- Input de arquivo (inicialmente oculto) -->
+                    <div id="editCategoriaArquivoContainer" style="display: none; margin-bottom: 10px;">
+                        <input type="file" id="editCategoriaImagem" accept="image/*" onchange="previewEditarCategoriaImagem(event)">
+                        <small>Selecione uma imagem do seu computador (máx. 5MB)</small>
+                    </div>
+
+                    <!-- Input de URL (inicialmente oculto) -->
+                    <div id="editCategoriaUrlContainer" style="display: none; margin-bottom: 10px;">
+                        <input type="url" id="editCategoriaImagemUrl" placeholder="https://exemplo.com/imagem.jpg">
+                        <button type="button" class="btn btn-primary" onclick="previewEditarCategoriaImagemPorUrl()">🔍 Carregar Imagem</button>
+                        <small>Digite a URL da imagem para carregá-la</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="fecharModalEditarCategoria()">Cancelar</button>
+                <button class="btn btn-primary" onclick="salvarEditarCategoria()" id="btnSalvarEditarCategoria">💾 Salvar Alterações</button>
+            </div>
+        `;
+
+        try {
+            modalOverlay.innerHTML = modalContent;
+        } catch (htmlError) {
+            console.error('Error setting modal HTML:', htmlError);
+            throw new Error('Failed to set modal content');
+        }
+        document.body.appendChild(modalOverlay);
+
+        // Inicializar o modal com os dados da categoria
+        inicializarEditarCategoria(categoria);
+
+    } catch (error) {
+        console.error('Erro ao abrir modal de edição:', error);
+        if (typeof notificationManager !== 'undefined') {
+            notificationManager.show('Erro ao carregar modal de edição: ' + error.message, 'error');
+        }
+    }
 }
 
 // Função para mostrar formulário de categoria
@@ -520,4 +568,287 @@ function blobToBase64(blob) {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
+}
+
+// Variáveis para edição de categoria
+let categoriaEditando = null;
+let imagemRemovida = false;
+let novaImagemBase64 = null;
+
+// Usar as funções utilitárias globais se disponíveis
+if (typeof API_BASE_URL === 'undefined') {
+    window.API_BASE_URL = 'http://localhost:3000';
+}
+if (typeof apiRequest === 'undefined') {
+    window.apiRequest = async function(endpoint, options = {}) {
+        const url = `${window.API_BASE_URL}${endpoint}`;
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        };
+
+        const response = await fetch(url, config);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || `Erro: ${response.status}`);
+        }
+
+        return data;
+    };
+}
+
+// Função para inicializar o modal com dados da categoria
+function inicializarEditarCategoria(categoria) {
+    categoriaEditando = categoria;
+    imagemRemovida = false;
+    novaImagemBase64 = null;
+
+    // Preencher nome
+    document.getElementById('editCategoriaNome').value = categoria.nome;
+
+    // Mostrar preview da imagem atual se existir
+    const preview = document.getElementById('editCategoriaImagemPreview');
+    const img = document.getElementById('editCategoriaImagemImg');
+
+    if (categoria.imagem && categoria.imagem.data) {
+        const base64 = arrayBufferToBase64(categoria.imagem.data);
+        img.src = `data:image/jpeg;base64,${base64}`;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+
+    // Esconder containers de input
+    document.getElementById('editCategoriaArquivoContainer').style.display = 'none';
+    document.getElementById('editCategoriaUrlContainer').style.display = 'none';
+
+    // Focar no campo
+    setTimeout(() => {
+        const input = document.getElementById('editCategoriaNome');
+        if (input) input.focus();
+    }, 100);
+}
+
+// Função para fechar o modal
+function fecharModalEditarCategoria() {
+    const modal = document.querySelector('.modal-overlay');
+    if (modal) modal.remove();
+}
+
+// Função para remover imagem atual
+function removerImagemCategoria() {
+    imagemRemovida = true;
+    novaImagemBase64 = null;
+    document.getElementById('editCategoriaImagemPreview').style.display = 'none';
+
+    // Limpar inputs
+    document.getElementById('editCategoriaImagem').value = '';
+    document.getElementById('editCategoriaImagemUrl').value = '';
+    document.getElementById('editCategoriaArquivoContainer').style.display = 'none';
+    document.getElementById('editCategoriaUrlContainer').style.display = 'none';
+}
+
+// Função para alternar para input de arquivo
+function alternarInputArquivoCategoria() {
+    const arquivoContainer = document.getElementById('editCategoriaArquivoContainer');
+    const urlContainer = document.getElementById('editCategoriaUrlContainer');
+
+    if (arquivoContainer.style.display === 'none') {
+        arquivoContainer.style.display = 'block';
+        urlContainer.style.display = 'none';
+        document.getElementById('editCategoriaImagemUrl').value = '';
+    } else {
+        arquivoContainer.style.display = 'none';
+    }
+}
+
+// Função para alternar para input de URL
+function alternarInputUrlCategoria() {
+    const arquivoContainer = document.getElementById('editCategoriaArquivoContainer');
+    const urlContainer = document.getElementById('editCategoriaUrlContainer');
+
+    if (urlContainer.style.display === 'none') {
+        urlContainer.style.display = 'block';
+        arquivoContainer.style.display = 'none';
+        document.getElementById('editCategoriaImagem').value = '';
+    } else {
+        urlContainer.style.display = 'none';
+    }
+}
+
+// Função para preview da imagem por arquivo
+function previewEditarCategoriaImagem(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+        alert('Por favor, selecione apenas arquivos de imagem.');
+        event.target.value = '';
+        return;
+    }
+
+    // Validar tamanho (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Imagem muito grande! Tamanho máximo: 5MB');
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        novaImagemBase64 = e.target.result;
+        imagemRemovida = false;
+
+        const preview = document.getElementById('editCategoriaImagemPreview');
+        const img = document.getElementById('editCategoriaImagemImg');
+
+        if (preview && img) {
+            img.src = e.target.result;
+            preview.style.display = 'block';
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// Função para preview da imagem por URL
+async function previewEditarCategoriaImagemPorUrl() {
+    const urlInput = document.getElementById('editCategoriaImagemUrl');
+    const url = urlInput.value.trim();
+
+    if (!url) {
+        alert('Por favor, digite uma URL válida.');
+        return;
+    }
+
+    // Validar formato da URL
+    try {
+        new URL(url);
+    } catch (e) {
+        alert('URL inválida. Use o formato: https://exemplo.com/imagem.jpg');
+        return;
+    }
+
+    try {
+        const button = document.querySelector('button[onclick="previewEditarCategoriaImagemPorUrl()"]');
+        const originalText = button.textContent;
+        button.textContent = '⏳ Carregando...';
+        button.disabled = true;
+
+        const response = await fetch(url, { method: 'GET', mode: 'cors' });
+        if (!response.ok) throw new Error(`Erro ao carregar imagem: ${response.status}`);
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.startsWith('image/')) {
+            throw new Error('A URL não aponta para uma imagem válida.');
+        }
+
+        const blob = await response.blob();
+        if (blob.size > 5 * 1024 * 1024) {
+            throw new Error('Imagem muito grande! Tamanho máximo: 5MB');
+        }
+
+        const base64 = await blobToBase64(blob);
+        novaImagemBase64 = base64;
+        imagemRemovida = false;
+
+        const preview = document.getElementById('editCategoriaImagemPreview');
+        const img = document.getElementById('editCategoriaImagemImg');
+
+        if (preview && img) {
+            img.src = base64;
+            preview.style.display = 'block';
+        }
+
+        alert('✅ Imagem carregada com sucesso!');
+
+    } catch (error) {
+        console.error('Erro ao carregar imagem da URL:', error);
+        alert(`❌ ${error.message}`);
+    } finally {
+        const button = document.querySelector('button[onclick="previewEditarCategoriaImagemPorUrl()"]');
+        if (button) {
+            button.textContent = '🔍 Carregar Imagem';
+            button.disabled = false;
+        }
+    }
+}
+
+// Função para salvar as alterações
+async function salvarEditarCategoria() {
+    const nome = document.getElementById('editCategoriaNome').value.trim();
+
+    if (!nome) {
+        alert('Nome da categoria é obrigatório');
+        return;
+    }
+
+    const btnSalvar = document.getElementById('btnSalvarEditarCategoria');
+    const originalText = btnSalvar.innerHTML;
+    btnSalvar.innerHTML = '<div class="loading" style="width: 16px; height: 16px;"></div> Salvando...';
+    btnSalvar.disabled = true;
+
+    try {
+        const updateData = {
+            nome: nome.toUpperCase()
+        };
+
+        // Lidar com a imagem
+        if (imagemRemovida) {
+            // Se imagem foi removida, definir como null
+            updateData.imagem = null;
+        } else if (novaImagemBase64) {
+            // Se há nova imagem, usar ela
+            updateData.imagem = novaImagemBase64;
+        }
+        // Se não houve mudança na imagem, não enviar o campo
+
+        console.log('Update data being sent:', updateData);
+
+        const response = await fetch(`${API_BASE_URL}/categorias/${categoriaEditando.id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updateData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(`✅ Categoria atualizada com sucesso!`);
+            fecharModalEditarCategoria();
+
+            // Notificar o index.html para recarregar categorias
+            if (window.parent && window.parent.carregarCategorias) {
+                window.parent.carregarCategorias();
+            }
+            if (window.parent && window.parent.carregarCategoriasLista) {
+                window.parent.carregarCategoriasLista();
+            }
+        } else {
+            throw new Error(result.message || 'Erro ao atualizar categoria');
+        }
+
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar categoria: ' + error.message);
+    } finally {
+        btnSalvar.innerHTML = originalText;
+        btnSalvar.disabled = false;
+    }
+}
+
+// Função auxiliar para converter ArrayBuffer para base64
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
 }
