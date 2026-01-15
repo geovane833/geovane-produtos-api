@@ -23,9 +23,9 @@ async function salvarCategoria(event) {
         // Verificar se há imagem selecionada (priorizar URL sobre arquivo)
         let imagemBase64 = null;
 
-        // Primeiro, tentar usar imagem da URL
-        if (produtoEncontradoGlobal && produtoEncontradoGlobal.imagemUrlBase64) {
-            imagemBase64 = produtoEncontradoGlobal.imagemUrlBase64;
+        // Primeiro, tentar usar imagem da URL (categoria específica)
+        if (window.categoriaImagemUrlBase64) {
+            imagemBase64 = window.categoriaImagemUrlBase64;
         }
         // Se não tiver imagem da URL, tentar arquivo
         else {
@@ -67,9 +67,12 @@ async function salvarCategoria(event) {
             }
             if (event && event.target) event.target.reset();
 
-            // Limpar preview da imagem
+            // Limpar preview da imagem e variáveis
             const preview = document.getElementById('categoriaImagemPreview');
             if (preview) preview.style.display = 'none';
+
+            // Limpar variável da imagem URL
+            delete window.categoriaImagemUrlBase64;
 
             // Recarregar listas se necessário
             if (typeof carregarCategorias === 'function') {
@@ -440,9 +443,8 @@ async function previewCategoriaImagemPorUrl() {
             preview.style.display = 'block';
         }
 
-        // Armazenar a imagem convertida
-        produtoEncontradoGlobal = produtoEncontradoGlobal || {};
-        produtoEncontradoGlobal.imagemUrlBase64 = base64;
+        // Armazenar a imagem convertida (variável específica para categorias)
+        window.categoriaImagemUrlBase64 = base64;
 
         if (typeof notificationManager !== 'undefined') {
             notificationManager.show('✅ Imagem carregada com sucesso!', 'success');
@@ -475,8 +477,7 @@ async function previewCategoriaImagemPorUrl() {
                         preview.style.display = 'block';
                     }
 
-                    produtoEncontradoGlobal = produtoEncontradoGlobal || {};
-                    produtoEncontradoGlobal.imagemUrlBase64 = base64;
+                    window.categoriaImagemUrlBase64 = base64;
 
                     if (typeof notificationManager !== 'undefined') {
                         notificationManager.show('✅ Imagem carregada com sucesso!', 'success');
