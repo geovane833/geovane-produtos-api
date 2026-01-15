@@ -108,9 +108,12 @@ function exibirProdutos(produtos, filtroCategoria = '') {
             <tr>
                 <th>Imagem</th>
                 <th>Nome</th>
+                <th>Marca/Modelo</th>
+                <th>Unidade</th>
+                <th>Peso</th>
+                <th>Dimensões</th>
+                <th>Status</th>
                 <th>Código</th>
-                <th>Descrição</th>
-                <th>Observação</th>
                 <th>Categoria</th>
                 <th>Criado em</th>
                 <th>Ações</th>
@@ -135,13 +138,23 @@ function exibirProdutos(produtos, filtroCategoria = '') {
             <td>
                 <div class="product-name" title="${produto.nome}">${produto.nome}</div>
             </td>
+            <td>
+                <div style="font-size: 12px; color: #666;">
+                    ${produto.marca ? `<strong>${produto.marca}</strong><br>` : ''}
+                    ${produto.modelo ? `<span>${produto.modelo}</span>` : '-'}
+                </div>
+            </td>
+            <td>${produto.unidadeMedida || '-'}</td>
+            <td>${produto.peso ? `${produto.peso} kg` : '-'}</td>
+            <td>
+                <div style="font-size: 12px;" title="${produto.dimensoes || ''}">${produto.dimensoes || '-'}</div>
+            </td>
+            <td>
+                <span class="status-badge ${produto.ativo ? 'status-active' : 'status-inactive'}">
+                    ${produto.ativo ? '✅ Ativo' : '❌ Inativo'}
+                </span>
+            </td>
             <td>${produto.codigoBarras || '-'}</td>
-            <td>
-                <div class="product-description" title="${produto.descricao || ''}">${produto.descricao || '-'}</div>
-            </td>
-            <td>
-                <div class="product-description" title="${produto.observacao || ''}">${produto.observacao || '-'}</div>
-            </td>
             <td>
                 <span class="category-name">${produto.categoria ? produto.categoria.nome : 'N/A'}</span>
             </td>

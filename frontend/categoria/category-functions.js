@@ -20,7 +20,24 @@ async function salvarCategoria(event) {
             nome: nome.toUpperCase()
         };
 
-        const response = await fetch(`${API_BASE_URL}/categorias`, {
+        // Verificar se há imagem selecionada
+        const categoriaImagem = document.getElementById('categoriaImagem');
+        if (categoriaImagem && categoriaImagem.files && categoriaImagem.files[0]) {
+            const file = categoriaImagem.files[0];
+
+            // Validar tamanho (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                if (typeof notificationManager !== 'undefined') {
+                    notificationManager.show('Imagem muito grande! Tamanho máximo: 5MB', 'error');
+                }
+                return;
+            }
+
+            // Converter para base64
+            categoriaData.imagem = await fileToBase64(file);
+        }
+
+        const response = await fetch(`${window.API_BASE_URL || API_BASE_URL}/categorias`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -35,6 +52,10 @@ async function salvarCategoria(event) {
                 notificationManager.show(`✅ Categoria "${result.nome}" cadastrada com sucesso!`, 'success');
             }
             if (event && event.target) event.target.reset();
+
+            // Limpar preview da imagem
+            const preview = document.getElementById('categoriaImagemPreview');
+            if (preview) preview.style.display = 'none';
 
             // Recarregar listas se necessário
             if (typeof carregarCategorias === 'function') {
@@ -84,10 +105,18 @@ function exibirCategorias(categorias) {
         const categoriaDiv = document.createElement('div');
         categoriaDiv.className = 'item';
         categoriaDiv.innerHTML = `
-            <h3>${categoria.nome}</h3>
-            <p><strong>Criado em:</strong> ${new Date(categoria.criadoEm).toLocaleString('pt-BR')}</p>
-            <p><strong>Produtos:</strong> ${categoria.produtos ? categoria.produtos.length : 0}</p>
-            <div class="actions">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                ${categoria.imagem ?
+                    `<img src="data:image/jpeg;base64,${arrayBufferToBase64(categoria.imagem.data)}" alt="${categoria.nome}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">` :
+                    '<div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 20px;">🏷️</div>'
+                }
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 5px 0;">${categoria.nome}</h3>
+                    <p style="margin: 0 0 3px 0; color: #666; font-size: 14px;"><strong>Criado em:</strong> ${new Date(categoria.criadoEm).toLocaleString('pt-BR')}</p>
+                    <p style="margin: 0; color: #666; font-size: 14px;"><strong>Produtos:</strong> ${categoria.produtos ? categoria.produtos.length : 0}</p>
+                </div>
+            </div>
+            <div class="actions" style="margin-top: 10px;">
                 <button class="btn btn-primary" onclick="editarCategoria(${categoria.id}, '${categoria.nome}')">Editar</button>
                 <button class="btn btn-danger" onclick="deletarCategoria(${categoria.id})">Excluir</button>
             </div>
@@ -271,4 +300,40 @@ async function cadastrarCategoria() {
         console.error('Erro:', error);
         mostrarMensagem(`❌ Erro: ${error.message}`, 'error');
     }
+}
+
+// Função para preview da imagem da categoria
+function previewCategoriaImagem(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+        if (typeof notificationManager !== 'undefined') {
+            notificationManager.show('Por favor, selecione apenas arquivos de imagem.', 'error');
+        }
+        event.target.value = '';
+        return;
+    }
+
+    // Validar tamanho (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        if (typeof notificationManager !== 'undefined') {
+            notificationManager.show('Imagem muito grande! Tamanho máximo: 5MB', 'error');
+        }
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('categoriaImagemPreview');
+        const img = document.getElementById('categoriaImagemImg');
+
+        if (preview && img) {
+            img.src = e.target.result;
+            preview.style.display = 'block';
+        }
+    };
+    reader.readAsDataURL(file);
 }

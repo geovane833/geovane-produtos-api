@@ -98,6 +98,50 @@
                     </div>
                 </div>
 
+                <!-- Novos campos em grid de 2 colunas -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="marcaProduto">Marca</label>
+                        <input type="text" id="marcaProduto" placeholder="Ex: Apple, Samsung" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;" oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                    <div class="form-group">
+                        <label for="modeloProduto">Modelo</label>
+                        <input type="text" id="modeloProduto" placeholder="Ex: iPhone 15 Pro" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;" oninput="this.value = this.value.toUpperCase()">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="unidadeMedidaProduto">Unidade de Medida</label>
+                        <select id="unidadeMedidaProduto" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;">
+                            <option value="">Selecione</option>
+                            <option value="unidade">Unidade</option>
+                            <option value="kg">Quilograma (kg)</option>
+                            <option value="litro">Litro</option>
+                            <option value="metro">Metro</option>
+                            <option value="pacote">Pacote</option>
+                            <option value="caixa">Caixa</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pesoProduto">Peso (kg)</label>
+                        <input type="number" id="pesoProduto" step="0.001" min="0" placeholder="0.200" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="ativoProduto">Status</label>
+                        <select id="ativoProduto" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;">
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="dimensoesProduto">Dimensões</label>
+                    <input type="text" id="dimensoesProduto" placeholder="Ex: 15x7x1 cm" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;" oninput="this.value = this.value.toUpperCase()">
+                    <small style="color: #666; font-size: 12px;">Formato: comprimento x largura x altura (ex: 30x20x10 cm)</small>
+                </div>
+
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label for="descricaoProduto">Descrição</label>
                     <textarea id="descricaoProduto" placeholder="Descrição detalhada do produto" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; min-height: 100px; resize: vertical; font-size: 16px;"></textarea>
@@ -484,6 +528,12 @@
 
             const nome = document.getElementById('nomeProduto').value.trim();
             const codigoBarras = document.getElementById('codigoBarrasProduto').value.trim();
+            const marca = document.getElementById('marcaProduto').value.trim();
+            const modelo = document.getElementById('modeloProduto').value.trim();
+            const unidadeMedida = document.getElementById('unidadeMedidaProduto').value;
+            const peso = document.getElementById('pesoProduto').value;
+            const dimensoes = document.getElementById('dimensoesProduto').value.trim();
+            const ativo = document.getElementById('ativoProduto').value === 'true';
             const descricao = document.getElementById('descricaoProduto').value.trim();
             const observacao = document.getElementById('observacaoProduto').value.trim();
             const categoriaId = document.getElementById('categoriaProduto').value;
@@ -519,6 +569,12 @@
                     nome: nome.toUpperCase(),
                     codigoBarras: codigoBarras || null,
                     imagem: imagemBase64,
+                    marca: marca || null,
+                    modelo: modelo || null,
+                    unidadeMedida: unidadeMedida || null,
+                    peso: peso ? parseFloat(peso) : null,
+                    dimensoes: dimensoes || null,
+                    ativo: ativo,
                     descricao: descricao ? descricao.toUpperCase() : null,
                     observacao: observacao ? observacao.toUpperCase() : null,
                     categoriaId: parseInt(categoriaId)

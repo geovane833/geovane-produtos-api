@@ -84,6 +84,15 @@
                         <input type="text" id="categoriaNome" required placeholder="Ex: Bebidas, Alimentos" oninput="this.value = this.value.toUpperCase()">
                     </div>
 
+                    <div class="form-group">
+                        <label for="categoriaImagem">Imagem da Categoria (opcional)</label>
+                        <input type="file" id="categoriaImagem" accept="image/*" onchange="previewCategoriaImagem(event)">
+                        <small style="color: #666; font-size: 12px;">Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB</small>
+                        <div id="categoriaImagemPreview" style="margin-top: 10px; display: none;">
+                            <img id="categoriaImagemImg" style="max-width: 100px; max-height: 100px; border-radius: 8px; border: 2px solid #ddd;" alt="Preview">
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary">🚀 Cadastrar Categoria</button>
                 </form>
             </div>
