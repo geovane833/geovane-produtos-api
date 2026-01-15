@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: geovane-produtos-api
+    runtime: node
+    buildCommand: npm run build
+    startCommand: npm run start:render
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromSecret: database_url
