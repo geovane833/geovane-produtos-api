@@ -8,11 +8,12 @@ export class CategoriaRepository {
   constructor(private prisma: PrismaService) {}
 
   async create(data: CreateCategoriaDto): Promise<Categoria> {
+    const createData: any = {
+      ...data,
+      imagem: data.imagem ? Buffer.from(data.imagem, 'base64') : null,
+    };
     return this.prisma.categoria.create({
-      data: {
-        ...data,
-        imagem: data.imagem ? Buffer.from(data.imagem, 'base64') : null,
-      },
+      data: createData,
     });
   }
 
