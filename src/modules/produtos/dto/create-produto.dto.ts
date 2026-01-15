@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsNumber, IsBoolean, Min } from 'class-validator';
 
 export class CreateProdutoDto {
   @IsString()
@@ -19,6 +19,31 @@ export class CreateProdutoDto {
   @IsOptional()
   @IsString()
   observacao?: string;
+
+  @IsOptional()
+  @IsString()
+  marca?: string;
+
+  @IsOptional()
+  @IsString()
+  modelo?: string;
+
+  @IsOptional()
+  @IsString()
+  unidadeMedida?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  peso?: number;
+
+  @IsOptional()
+  @IsString()
+  dimensoes?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  ativo?: boolean;
 
   @IsInt()
   categoriaId: number; // ID da categoria selecionada

@@ -9,7 +9,10 @@ export class CategoriaRepository {
 
   async create(data: CreateCategoriaDto): Promise<Categoria> {
     return this.prisma.categoria.create({
-      data,
+      data: {
+        ...data,
+        imagem: data.imagem ? Buffer.from(data.imagem, 'base64') : null,
+      },
     });
   }
 
@@ -40,9 +43,13 @@ export class CategoriaRepository {
   }
 
   async update(id: number, data: Partial<CreateCategoriaDto>): Promise<Categoria> {
+    const updateData: any = { ...data };
+    if (data.imagem) {
+      updateData.imagem = Buffer.from(data.imagem, 'base64');
+    }
     return this.prisma.categoria.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

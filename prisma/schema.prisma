@@ -13,6 +13,7 @@ datasource db {
 model Categoria {
   id          Int      @id @default(autoincrement())
   nome        String
+  imagem      Bytes?
   criadoEm    DateTime @default(now())
   atualizadoEm DateTime @updatedAt
   produtos    Produto[]
@@ -25,6 +26,12 @@ model Produto {
   imagem        Bytes?
   descricao     String?
   observacao    String?
+  marca         String?
+  modelo        String?
+  unidadeMedida String?
+  peso          Decimal?  @db.Decimal(10, 3)
+  dimensoes     String?
+  ativo         Boolean   @default(true)
   categoriaId   Int
   categoria     Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
   criadoEm      DateTime  @default(now())
