@@ -8,11 +8,17 @@ import { UpdateProdutoDto } from '../dto/update-produto.dto';
 export class ProdutoRepository {
   constructor(private prisma: PrismaService) {}
 
+  private convertBase64ToBuffer(base64String: string): Buffer {
+    // Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
+    const base64Data = base64String.replace(/^data:image\/[a-z]+;base64,/, '');
+    return Buffer.from(base64Data, 'base64');
+  }
+
   async create(data: CreateProdutoDto): Promise<Produto> {
     return this.prisma.produto.create({
       data: {
         ...data,
-        imagem: data.imagem ? Buffer.from(data.imagem, 'base64') : null,
+        imagem: data.imagem ? this.convertBase64ToBuffer(data.imagem) : null,
       },
       include: {
         categoria: true,
@@ -65,7 +71,7 @@ export class ProdutoRepository {
       where: { id },
       data: {
         ...data,
-        imagem: data.imagem ? Buffer.from(data.imagem, 'base64') : undefined,
+        imagem: data.imagem ? this.convertBase64ToBuffer(data.imagem) : undefined,
       },
       include: {
         categoria: true,

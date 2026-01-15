@@ -7,10 +7,16 @@ import { CreateCategoriaDto } from '../dto/create-categoria.dto';
 export class CategoriaRepository {
   constructor(private prisma: PrismaService) {}
 
+  private convertBase64ToBuffer(base64String: string): Buffer {
+    // Remove data URL prefix if present (e.g., "data:image/jpeg;base64,")
+    const base64Data = base64String.replace(/^data:image\/[a-z]+;base64,/, '');
+    return Buffer.from(base64Data, 'base64');
+  }
+
   async create(data: CreateCategoriaDto): Promise<any> {
     const createData: any = {
       ...data,
-      imagem: data.imagem ? Buffer.from(data.imagem, 'base64') : null,
+      imagem: data.imagem ? this.convertBase64ToBuffer(data.imagem) : null,
     };
     return this.prisma.categoria.create({
       data: createData,
@@ -59,7 +65,7 @@ export class CategoriaRepository {
         updateData.imagem = null;
       } else {
         console.log('Converting imagem from base64');
-        updateData.imagem = Buffer.from(data.imagem, 'base64');
+        updateData.imagem = this.convertBase64ToBuffer(data.imagem);
       }
     } else {
       console.log('Imagem not provided, not updating');
